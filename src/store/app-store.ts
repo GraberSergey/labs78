@@ -397,6 +397,22 @@ export async function deleteCreatedModel(modelId: number): Promise<void> {
   }
 }
 
+export async function deleteFinishedModel(modelId: number): Promise<void> {
+  try {
+    const model = getModelById(modelId)
+
+    if (model.status !== 'finished') {
+      throw new ValidationError('Удалять можно только готовые модели.')
+    }
+
+    await modelRepository.remove(modelId)
+    appState.models = appState.models.filter((item) => item.id !== modelId)
+    setActionMessage('Готовая модель удалена.')
+  } catch (error) {
+    appState.errorMessage = formatError(error)
+  }
+}
+
 export async function installPlasticOnPrinter(
   printerId: number,
   plasticId: number,
@@ -574,36 +590,30 @@ export async function stopPrinter(printerId: number): Promise<void> {
 
 export async function resetPrinterError(printerId: number): Promise<void> {
   try {
-    const printerRecord = getPrinterById(printerId)
+    const source = getPrinterById(printerId)
 
-    const updated: PrinterRecord = {
-      ...printerRecord,
-      status: 'idle',
-      progress: 0,
-      errorMessage: null,
-      currentModelId: null,
+    if (source.status !== 'error') {
+      throw new ValidationError('Сброс доступен только после ошибки печати.')
     }
 
-    if (printerRecord.currentModelId !== null) {
-      const failedModel = getModelById(printerRecord.currentModelId)
+    const printer = hydratePrinter(printerId)
+    printer.startPrint()
 
-      const updatedModel: ModelRecord = {
-        ...failedModel,
-        status: 'created',
-        printerId: null,
-        lastColor: null,
-      }
+    const updatedPrinter = printer.toRecord()
+    const syncTasks: Promise<unknown>[] = [syncPrinter(updatedPrinter)]
 
-      // после сброса возвращаем проблемную модель обратно в список созданных
-      await Promise.all([syncPrinter(updated), syncModel(updatedModel)])
-      setModelRecord(updatedModel)
-    } else {
-      await syncPrinter(updated)
+    const currentModelRecord = makeCurrentModelPrintingRecord(updatedPrinter)
+
+    if (currentModelRecord !== null) {
+      setModelRecord(currentModelRecord)
+      syncTasks.push(syncModel(currentModelRecord))
     }
 
-    setPrinterRecord(updated)
-    stopPrinterTimer(printerId)
-    setActionMessage('Ошибка сброшена, можно печатать снова.')
+    await Promise.all(syncTasks)
+
+    setPrinterRecord(updatedPrinter)
+    startPrinterTimer(printerId)
+    setActionMessage('Печать продолжена с места остановки.')
   } catch (error) {
     appState.errorMessage = formatError(error)
   }
@@ -639,23 +649,26 @@ export async function tickPrinter(printerId: number): Promise<void> {
     }
 
     if (result.type === 'error') {
-      // при поломке мы помечаем модель как созданную, чтобы ее можно было перепечатать
+      // при поломке возвращаем текущую модель в начало очереди и сохраняем прогресс
       if (updatedPrinter.currentModelId !== null) {
         const failedModel = getModelById(updatedPrinter.currentModelId)
-        const resetModel: ModelRecord = {
-          ...failedModel,
-          status: 'created',
-          printerId: null,
-          lastColor: null,
+
+        if (!updatedPrinter.queueModelIds.includes(failedModel.id)) {
+          updatedPrinter.queueModelIds = [failedModel.id, ...updatedPrinter.queueModelIds]
         }
 
-        syncTasks.push(syncModel(resetModel))
-        setModelRecord(resetModel)
+        const queuedModel: ModelRecord = {
+          ...failedModel,
+          status: 'queued',
+          printerId: updatedPrinter.id,
+        }
+
+        syncTasks.push(syncModel(queuedModel))
+        setModelRecord(queuedModel)
       }
 
       updatedPrinter.currentModelId = null
       updatedPrinter.status = 'error'
-      updatedPrinter.progress = 0
 
       // останавливаем только таймер этого принтера, остальные могут печатать дальше
       stopPrinterTimer(printerId)

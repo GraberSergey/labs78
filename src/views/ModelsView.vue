@@ -6,6 +6,7 @@ import {
   appState,
   copyModel,
   deleteCreatedModel,
+  deleteFinishedModel,
   loadAllData,
 } from '../store/app-store'
 
@@ -79,7 +80,7 @@ const finishedItems = computed(() => {
       primaryText: model.name,
       secondaryText: `Периметр: ${model.perimeter} мм, готова.`,
       createdAt: model.createdAt,
-      canDelete: false,
+      canDelete: true,
       busyHint: null,
       colorPreview: getModelColor(model),
     }))
@@ -154,7 +155,7 @@ onMounted(async () => {
         :items="finishedItems"
         empty-text="Готовых моделей пока нет."
         :sortable="true"
-        @remove="() => {}"
+        @remove="deleteFinishedModel"
       />
     </div>
   </section>

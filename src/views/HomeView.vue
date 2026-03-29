@@ -4,8 +4,10 @@ import HomePrinterPanel from '../components/HomePrinterPanel.vue'
 import {
   addModelToPrinterQueue,
   appState,
+  clearPrinterQueue,
   installPlasticOnPrinter,
   loadAllData,
+  removeModelFromPrinterQueue,
   removePlasticFromPrinter,
   resetPrinterError,
   startPrinter,
@@ -55,8 +57,19 @@ const printerCards = computed(() => {
     errorMessage: printer.errorMessage,
     installedPlastic: getPlasticLabel(printer.installedPlasticId),
     queue: printer.queueModelIds
-      .map((modelId) => appState.models.find((model) => model.id === modelId)?.name ?? null)
-      .filter((name): name is string => name !== null),
+      .map((modelId) => {
+        const model = appState.models.find((item) => item.id === modelId) ?? null
+
+        if (model === null) {
+          return null
+        }
+
+        return {
+          id: model.id,
+          name: model.name,
+        }
+      })
+      .filter((model): model is { id: number; name: string } => model !== null),
     currentModel: getModelName(printer.currentModelId),
   }))
 })
@@ -129,6 +142,8 @@ onMounted(async () => {
       @install-plastic="installPlasticOnPrinter"
       @remove-plastic="removePlasticFromPrinter"
       @add-to-queue="addModelToPrinterQueue"
+      @remove-from-queue="removeModelFromPrinterQueue"
+      @clear-queue="clearPrinterQueue"
       @start="startPrinter"
       @stop="stopPrinter"
       @reset-error="resetPrinterError"

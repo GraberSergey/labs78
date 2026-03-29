@@ -13,6 +13,8 @@ import type {
 } from '../types/entities'
 import { PlasticSpool } from './plastic-spool'
 
+const ERROR_CHANCE = 0.1
+
 export interface PrinterHydratePayload {
   printer: PrinterRecord
   installedPlastic: PlasticRecord | null
@@ -100,6 +102,24 @@ export class Printer {
     this.errorMessage = null
   }
 
+  // убирает конкретную модель из очереди по id
+  public removeFromQueue(modelId: number): void {
+    const index = this.queueModels.findIndex((model) => model.id === modelId)
+
+    if (index === -1) {
+      throw new ValidationError('Модель не найдена в очереди.')
+    }
+
+    this.queueModels.splice(index, 1)
+  }
+
+  // очищает очередь и возвращает модели, которые были в ней
+  public clearQueue(): ModelRecord[] {
+    const removedModels = [...this.queueModels]
+    this.queueModels = []
+    return removedModels
+  }
+
   // готовит принтер к печати первой модели
   public startPrint(): void {
     if (this.spool === null) {
@@ -134,8 +154,8 @@ export class Printer {
       }
     }
 
-    // первый бросок кубика d6 решает, есть ли поломка на шаге
-    if (this.rollDice(randomFn, 6) === 1) {
+    // первый бросок кубика решает, есть ли поломка на шаге (10%)
+    if (randomFn() < ERROR_CHANCE) {
       const error = this.createRandomError(randomFn)
       this.status = 'error'
       this.errorMessage = error.message

@@ -5,7 +5,7 @@
       "brand": "Bambu Lab A1",
       "article": "A1-001",
       "speed": 80,
-      "installedPlasticId": null,
+      "installedPlasticId": 2,
       "queueModelIds": [],
       "currentModelId": null,
       "status": "idle",

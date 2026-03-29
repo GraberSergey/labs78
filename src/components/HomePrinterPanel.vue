@@ -15,7 +15,7 @@ interface PrinterCardData {
   progress: number
   errorMessage: string | null
   installedPlastic: string | null
-  queue: string[]
+  queue: Array<{ id: number; name: string }>
   currentModel: string | null
 }
 
@@ -30,6 +30,8 @@ defineEmits<{
   installPlastic: [printerId: number, plasticId: number]
   removePlastic: [printerId: number]
   addToQueue: [printerId: number, modelId: number]
+  removeFromQueue: [printerId: number, modelId: number]
+  clearQueue: [printerId: number]
   start: [printerId: number]
   stop: [printerId: number]
   resetError: [printerId: number]
@@ -55,6 +57,10 @@ defineEmits<{
         "
         @remove-plastic="$emit('removePlastic', $event)"
         @add-to-queue="(printerId, modelId) => $emit('addToQueue', printerId, modelId)"
+        @remove-from-queue="
+          (printerId, modelId) => $emit('removeFromQueue', printerId, modelId)
+        "
+        @clear-queue="$emit('clearQueue', $event)"
         @start="$emit('start', $event)"
         @stop="$emit('stop', $event)"
         @reset-error="$emit('resetError', $event)"

@@ -15,7 +15,7 @@ interface PrinterCardData {
   progress: number
   errorMessage: string | null
   installedPlastic: string | null
-  queue: string[]
+  queue: Array<{ id: number; name: string }>
   currentModel: string | null
 }
 
@@ -31,6 +31,8 @@ const emit = defineEmits<{
   installPlastic: [printerId: number, plasticId: number]
   removePlastic: [printerId: number]
   addToQueue: [printerId: number, modelId: number]
+  removeFromQueue: [printerId: number, modelId: number]
+  clearQueue: [printerId: number]
   start: [printerId: number]
   stop: [printerId: number]
   resetError: [printerId: number]
@@ -93,8 +95,25 @@ function queueModel(): void {
       <h4>Очередь</h4>
       <p v-if="printer.queue.length === 0">Очередь пустая.</p>
       <ol v-else>
-        <li v-for="modelName in printer.queue" :key="`${printer.id}-${modelName}`">{{ modelName }}</li>
+        <li v-for="queueItem in printer.queue" :key="queueItem.id" class="printer-card__queue-item">
+          <span>{{ queueItem.name }}</span>
+          <button
+            type="button"
+            class="printer-card__queue-remove"
+            @click="emit('removeFromQueue', printer.id, queueItem.id)"
+          >
+            Убрать
+          </button>
+        </li>
       </ol>
+      <button
+        type="button"
+        class="printer-card__queue-clear"
+        :disabled="printer.queue.length === 0"
+        @click="emit('clearQueue', printer.id)"
+      >
+        Очистить очередь
+      </button>
     </div>
 
     <div class="printer-card__controls">
@@ -203,6 +222,30 @@ function queueModel(): void {
 .printer-card__queue p,
 .printer-card__queue ol {
   margin: 0.35rem 0 0;
+}
+
+.printer-card__queue-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+.printer-card__queue-item:last-child {
+  margin-bottom: 0;
+}
+
+.printer-card__queue-remove,
+.printer-card__queue-clear {
+  border-radius: 8px;
+  border: 1px solid #91b9d4;
+  padding: 0.25rem 0.5rem;
+  background: #ffffff;
+}
+
+.printer-card__queue-clear {
+  margin-top: 0.5rem;
 }
 
 .printer-card__controls {

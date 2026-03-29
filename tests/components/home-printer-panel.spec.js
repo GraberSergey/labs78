@@ -14,7 +14,10 @@ function buildProps() {
         progress: 35,
         errorMessage: null,
         installedPlastic: 'PLA, белый, остаток 120',
-        queue: ['деталь 1', 'деталь 2'],
+        queue: [
+          { id: 101, name: 'деталь 1' },
+          { id: 102, name: 'деталь 2' },
+        ],
         currentModel: 'деталь 1',
       },
       {

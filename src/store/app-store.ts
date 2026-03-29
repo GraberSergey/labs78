@@ -462,6 +462,71 @@ export async function addModelToPrinterQueue(
   }
 }
 
+export async function removeModelFromPrinterQueue(
+  printerId: number,
+  modelId: number,
+): Promise<void> {
+  try {
+    const printer = hydratePrinter(printerId)
+    const model = getModelById(modelId)
+
+    printer.removeFromQueue(modelId)
+
+    const updatedPrinter = printer.toRecord()
+    const updatedModel: ModelRecord = {
+      ...model,
+      status: 'created',
+      printerId: null,
+    }
+
+    await Promise.all([syncPrinter(updatedPrinter), syncModel(updatedModel)])
+
+    setPrinterRecord(updatedPrinter)
+    setModelRecord(updatedModel)
+    setActionMessage('Модель убрана из очереди.')
+  } catch (error) {
+    appState.errorMessage = formatError(error)
+  }
+}
+
+export async function clearPrinterQueue(printerId: number): Promise<void> {
+  try {
+    const printer = hydratePrinter(printerId)
+    const queuedModels = printer.getQueue()
+
+    if (queuedModels.length === 0) {
+      throw new ValidationError('Очередь уже пустая.')
+    }
+
+    const removedModels = printer.clearQueue()
+    const updatedPrinter = printer.toRecord()
+
+    const resetModels = removedModels.map((model) => ({
+      ...model,
+      status: 'created' as const,
+      printerId: null,
+    }))
+
+    const syncTasks: Promise<unknown>[] = [syncPrinter(updatedPrinter)]
+
+    for (const updatedModel of resetModels) {
+      syncTasks.push(syncModel(updatedModel))
+    }
+
+    await Promise.all(syncTasks)
+
+    setPrinterRecord(updatedPrinter)
+
+    for (const updatedModel of resetModels) {
+      setModelRecord(updatedModel)
+    }
+
+    setActionMessage('Очередь очищена.')
+  } catch (error) {
+    appState.errorMessage = formatError(error)
+  }
+}
+
 export async function startPrinter(printerId: number): Promise<void> {
   try {
     const printer = hydratePrinter(printerId)

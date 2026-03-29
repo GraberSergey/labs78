@@ -38,27 +38,45 @@
       "material": "PETG",
       "color": "red",
       "totalLength": 180,
-      "usedLength": 0
+      "usedLength": 115
     }
   ],
   "models": [
-    {
-      "id": 1,
-      "name": "держатель кабеля",
-      "perimeter": 45,
-      "createdAt": "2026-03-29T18:00:00.000Z",
-      "status": "created",
-      "lastColor": null,
-      "printerId": null
-    },
     {
       "id": 2,
       "name": "корпус датчика",
       "perimeter": 70,
       "createdAt": "2026-03-29T18:10:00.000Z",
+      "status": "finished",
+      "lastColor": "red",
+      "printerId": null
+    },
+    {
+      "name": "1221 (копия) (копия) (копия) (копия) (копия)",
+      "perimeter": 40,
+      "createdAt": "2026-03-29T22:26:34.079Z",
       "status": "created",
       "lastColor": null,
-      "printerId": null
+      "printerId": null,
+      "id": 10
+    },
+    {
+      "name": "1221 (копия) (копия) (копия) (копия) (копия) (копия)",
+      "perimeter": 40,
+      "createdAt": "2026-03-29T22:26:41.671Z",
+      "status": "created",
+      "lastColor": null,
+      "printerId": null,
+      "id": 11
+    },
+    {
+      "name": "1221 (копия) (копия) (копия) (копия) (копия) (копия)",
+      "perimeter": 40,
+      "createdAt": "2026-03-29T22:26:41.849Z",
+      "status": "created",
+      "lastColor": null,
+      "printerId": null,
+      "id": 12
     }
   ]
 }

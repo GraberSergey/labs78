@@ -13,7 +13,7 @@ export class ResourceRepository<T extends { id: number }> {
   }
 
   // создает запись
-  public create(payload: T): Promise<T> {
+  public create(payload: Omit<T, 'id'> | T): Promise<T> {
     return apiRequest<T>(this.resourcePath, {
       method: 'POST',
       body: JSON.stringify(payload),

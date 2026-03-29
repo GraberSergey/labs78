@@ -52,11 +52,6 @@ function formatError(error: unknown): string {
 }
 
 // выбирает следующий id для json-server на клиенте
-function nextId(items: Array<{ id: number }>): number {
-  const maxId = items.reduce((max, item) => Math.max(max, item.id), 0)
-  return maxId + 1
-}
-
 // обновляет запись принтера в текущем состоянии без полной перезагрузки
 function setPrinterRecord(updatedPrinter: PrinterRecord): void {
   const index = appState.printers.findIndex((printer) => printer.id === updatedPrinter.id)
@@ -232,8 +227,7 @@ export async function addPrinter(input: {
   article: string
   speed: number
 }): Promise<void> {
-  const printerRecord: PrinterRecord = {
-    id: nextId(appState.printers),
+  const printerRecord: Omit<PrinterRecord, 'id'> = {
     brand: input.brand,
     article: input.article,
     speed: input.speed,
@@ -304,8 +298,7 @@ export async function addPlastic(input: {
   color: PlasticRecord['color']
   totalLength: number
 }): Promise<void> {
-  const plasticRecord: PlasticRecord = {
-    id: nextId(appState.plastics),
+  const plasticRecord: Omit<PlasticRecord, 'id'> = {
     material: input.material,
     color: input.color,
     totalLength: input.totalLength,
@@ -345,10 +338,9 @@ export async function addModel(input: {
 }): Promise<void> {
   try {
     const createdModel = new Model3D({
-      id: nextId(appState.models),
       name: input.name,
       perimeter: input.perimeter,
-    }).toRecord()
+    }).toCreatePayload()
 
     const model = await modelRepository.create(createdModel)
     appState.models.push(model)
@@ -367,11 +359,10 @@ export async function copyModel(modelId: number): Promise<void> {
     }
 
     const copiedModel = new Model3D({
-      id: sourceModel.id,
       name: sourceModel.name,
       perimeter: sourceModel.perimeter,
       createdAt: sourceModel.createdAt,
-    }).cloneWithId(nextId(appState.models))
+    }).cloneCreatePayload()
 
     const created = await modelRepository.create(copiedModel)
     appState.models.push(created)
